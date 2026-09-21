@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ORBITA — an interactive map of the Solar System. Watch the planets orbit in real simulated time, explore moons and comets, and test yourself with the quiz." />
+  <title>ORBITA — Interactive Solar System</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='30' fill='%23ffb347'/%3E%3Ccircle cx='50' cy='50' r='44' fill='none' stroke='%235aa7e0' stroke-width='3'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <canvas id="space" aria-label="Solar system map. Use the buttons or arrow keys to explore planets." role="img"></canvas>
+
+  <header id="topbar">
+    <div class="brand">
+      <span class="brand-sun" aria-hidden="true"></span>
+      <h1>ORBITA</h1>
+      <span class="brand-sub">interactive solar system</span>
+    </div>
+
+    <div class="topbar-right">
+      <div class="clock" id="sim-date" aria-live="polite">—</div>
+      <div class="speed" role="group" aria-label="Simulation speed">
+        <button class="speed-btn" data-speed="0" title="Pause (Space)">⏸</button>
+        <button class="speed-btn" data-speed="1" title="1 day / second">1d</button>
+        <button class="speed-btn" data-speed="7" title="1 week / second">1w</button>
+        <button class="speed-btn" data-speed="30" title="1 month / second">1m</button>
+        <button class="speed-btn" data-speed="365" title="1 year / second">1y</button>
+      </div>
+      <div class="topbar-actions">
+        <button id="tour-btn" class="ghost-btn" title="Cinematic tour of the planets">▶ Tour</button>
+        <button id="quiz-btn" class="ghost-btn" title="Space quiz">✦ Quiz</button>
+        <button id="help-btn" class="ghost-btn" title="Keyboard shortcuts">?</button>
+        <button id="reset-btn" class="ghost-btn" title="Reset the view">⌂</button>
+      </div>
+    </div>
+  </header>
+
+  <aside id="panel" class="hidden" aria-live="polite">
+    <button id="panel-close" class="panel-close" aria-label="Close panel">✕</button>
+    <div id="panel-body"></div>
+  </aside>
+
+  <div id="zoombar" class="topbar-actions" role="group" aria-label="Zoom">
+    <button id="zoom-in" class="ghost-btn" title="Zoom in (+)">＋</button>
+    <button id="zoom-out" class="ghost-btn" title="Zoom out (−)">－</button>
+  </div>
+
+  <div id="hint-bar">
+    <span id="hint-text">Drag to pan · Scroll to zoom · Click a planet to explore · <kbd>1</kbd>–<kbd>8</kbd> select · <kbd>Space</kbd> pause</span>
+  </div>
+
+  <div id="modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal-box">
+      <button id="modal-close" class="panel-close" aria-label="Close">✕</button>
+      <h2 id="modal-title"></h2>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

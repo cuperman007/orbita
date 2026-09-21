@@ -667,6 +667,14 @@
   speedBtns.forEach((b) => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));
   setSpeed(sim.daysPerSec);
 
+  const todayBtn = document.getElementById('today-btn');
+  if (todayBtn) todayBtn.addEventListener('click', () => {
+    sim.days = 0;
+    lastClock = '';
+    todayBtn.classList.add('active');
+    setTimeout(() => todayBtn.classList.remove('active'), 250);
+  });
+
   // ---------- Reset / zoom buttons ----------
   function resetView() {
     userZoomed = false;

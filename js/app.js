@@ -27,7 +27,7 @@
   const sim = {
     days: 0,                       // simulated days since t0
     daysPerSec: reducedMotion ? 0 : 1,
-    startDate: new Date(2026, 8, 21), // 21 Sep 2026
+    startDate: new Date(),          // real "today" at load — ⏮ returns here
     selected: null,                // body id
     follow: null,                  // body id (camera follows)
     tour: false,
@@ -411,14 +411,17 @@
       b.x = pos.x; b.y = pos.y; b.rAU = pos.rAU;
     }
 
-    // Camera: follow target or ease toward pan target.
+    // Camera: follow target, track the pointer 1:1 while dragging, or ease.
     if (sim.follow && !dragging.moving) {
       const b = bodyIndex.get(sim.follow);
       if (b) { cam.x = b.x; cam.y = b.y; cam.targetX = b.x; cam.targetY = b.y; }
     } else {
       const ease = 1 - Math.pow(0.0015, dt); // smooth exponential ease
-      cam.x += (cam.targetX - cam.x) * ease;
-      cam.y += (cam.targetY - cam.y) * ease;
+      if (dragging.moving) { cam.x = cam.targetX; cam.y = cam.targetY; }
+      else {
+        cam.x += (cam.targetX - cam.x) * ease;
+        cam.y += (cam.targetY - cam.y) * ease;
+      }
       cam.zoom += (cam.targetZoom - cam.zoom) * ease;
     }
 
@@ -462,7 +465,7 @@
   const panel = document.getElementById('panel');
   const panelBody = document.getElementById('panel-body');
   const hint = document.getElementById('hint-text');
-  const HINT_DEFAULT = 'Drag to pan · Scroll to zoom · Click a planet to explore · <kbd>1</kbd>–<kbd>8</kbd> select · <kbd>Space</kbd> pause';
+  const HINT_DEFAULT = 'Drag or scroll to pan · Wheel, pinch or ⌃+scroll to zoom · Click a planet to explore · <kbd>1</kbd>–<kbd>8</kbd> select · <kbd>Space</kbd> pause';
 
   function selectBody(id, silent) {
     sim.selected = id;
@@ -598,8 +601,10 @@
     if (Math.hypot(e.clientX - dragging.sx, e.clientY - dragging.sy) > 5) dragging.moving = true;
     if (dragging.moving) {
       sim.follow = null; // user takes the wheel
-      cam.targetX = dragging.wx - dx / cam.zoom;
-      cam.targetY = dragging.wy - dy / cam.zoom;
+      // Total displacement since pointerdown (not the per-event delta!), so a
+      // long drag actually moves the camera the full distance.
+      cam.targetX = dragging.wx - (e.clientX - dragging.sx) / cam.zoom;
+      cam.targetY = dragging.wy - (e.clientY - dragging.sy) / cam.zoom;
     }
   });
 
@@ -632,7 +637,20 @@
 
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    zoomBy(Math.exp(-e.deltaY * 0.0015));
+    if (e.ctrlKey) {
+      // Trackpad pinch gesture → zoom around the pointer.
+      zoomBy(Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
+      return;
+    }
+    // Mouse wheel (line units or big steps) zooms; smooth two-finger
+    // trackpad scroll pans — the natural macOS gesture.
+    const isWheel = e.deltaMode !== 0 || Math.abs(e.deltaY) >= 50 || Math.abs(e.deltaX) >= 50;
+    if (isWheel) zoomBy(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
+    else {
+      sim.follow = null; // user takes the wheel
+      cam.targetX -= e.deltaX / cam.zoom;
+      cam.targetY -= e.deltaY / cam.zoom;
+    }
   }, { passive: false });
 
   function zoomBy(f, sx, sy) {
@@ -683,8 +701,9 @@
 
   const todayBtn = document.getElementById('today-btn');
   if (todayBtn) todayBtn.addEventListener('click', () => {
-    sim.days = 0;
+    sim.days = 0;      // back to the real "today" (load time)
     lastClock = '';
+    resetView();       // …and fly the camera home, so the reset is visible
     todayBtn.classList.add('active');
     setTimeout(() => todayBtn.classList.remove('active'), 250);
   });
@@ -728,7 +747,8 @@
       <li><span>Reset view</span><span><kbd>0</kbd></span></li>
       <li><span>Quiz / tour</span><span><kbd>Q</kbd> / <kbd>T</kbd></span></li>
       <li><span>Release camera / close</span><span><kbd>Esc</kbd></span></li>
-      <li><span>Pan · Zoom · Select</span><span>drag · scroll / pinch · click</span></li>
+      <li><span>Reset time &amp; view</span><span><b>⏮</b> / <b>⌂</b> / <kbd>0</kbd></span></li>
+      <li><span>Pan · Zoom · Select</span><span>drag / scroll · wheel, pinch / ⌃+scroll · click</span></li>
     </ul>
     <p class="quiz-why" style="margin-top:16px">Note: planets follow their real J2000 orbital elements — they are exactly where they are on the simulated date. Only the *sizes* and the distance scale are compressed so everything fits on one screen.</p>`;
   });
@@ -825,4 +845,7 @@
   resize();
   selectBody('earth');
   requestAnimationFrame(frame);
+
+  // Debug escape hatch (used by test/harness.mjs; harmless in the browser).
+  window.__ORBITA_DEBUG = { cam, sim, dragging, resetView };
 })();

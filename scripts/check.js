@@ -44,7 +44,7 @@ function walk(dir, out = []) {
     if (e.isDirectory()) {
       if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
       walk(p, out);
-    } else if (e.name.endsWith('.js')) out.push(p);
+    } else if (e.name.endsWith('.js') || e.name.endsWith('.mjs')) out.push(p);
   }
   return out;
 }
@@ -116,6 +116,15 @@ if (data) {
     }
     if (!q.why?.length) fail(`quiz ${i + 1}: missing explanation`);
   });
+}
+
+// 4 — behavior harness (headless DOM: drag-pan, wheel zoom/pan, reset)
+console.log('\n[4] behavior harness (test/harness.mjs)');
+try {
+  execFileSync(process.execPath, [path.join('test', 'harness.mjs')], { cwd: root, stdio: 'pipe' });
+  ok('all behavior checks passed');
+} catch (err) {
+  fail(`harness failed:\n${(err.stdout?.toString() + err.stderr?.toString()).trim()}`);
 }
 
 console.log(failures ? `\n${failures} check(s) failed` : '\nAll checks passed');

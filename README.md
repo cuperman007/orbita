@@ -23,7 +23,7 @@ python3 -m http.server 8787
 - **True planetary positions** — every body carries real J2000 Keplerian orbital elements (a, e, L, ϖ) and Kepler's equation is solved each frame, so the planets are drawn exactly where they are on the simulated date. Comet tails stream away from the Sun.
 - **520-rock asteroid belt** between Mars and Jupiter, with periods following Kepler's third law.
 - **Dwarf planets** — Pluto, Haumea, Makemake and Eris orbit out to ~68 AU, each with its own dossier.
-- **Camera** — drag to pan, scroll/pinch to zoom, click to select, "Follow" to lock onto a moving body.
+- **Camera** — drag **or two-finger scroll** to pan, wheel/pinch (or ⌃+scroll) to zoom, click to select, "Follow" to lock onto a moving body; ⏮ jumps time back to today **and** resets the view.
 - **Time machine** — pause or run at 1 day → 1 year per second, with a live simulated date.
 - **Planet dossiers** — diameter, orbit, year, day (incl. Venus's retrograde spin), moons, temperature, and a fact; moons of each planet are drawn individually (Triton orbits retrograde).
 - **Tour mode** (`T`) — a guided flythrough that hops planet to planet.
@@ -48,7 +48,7 @@ scripts/check.js      CI checks: asset refs, node --check, data shape
 
 ## CI/CD
 
-Push to `main` and GitHub Actions runs `scripts/check.js` (asset references, JS syntax, planetary data validation), then deploys the site to GitHub Pages.
+Push to `main` and GitHub Actions runs `scripts/check.js` (asset references, JS syntax, planetary data validation, and a headless behavior suite in `test/harness.mjs` that drives drag/scroll/click events through the real engine against a DOM stub), then deploys the site to GitHub Pages.
 
 Pages is enabled on this repo with **Source: GitHub Actions** (`build_type: workflow`), building from `main`. Every commit or merged PR to `main` runs the checks and redeploys automatically.
 

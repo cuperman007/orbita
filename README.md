@@ -4,7 +4,7 @@ A single-page, dependency-free interactive map of the Solar System. Watch the pl
 
 ![stack](https://img.shields.io/badge/stack-vanilla%20JS%20%2B%20canvas-ffb347) ![deps](https://img.shields.io/badge/dependencies-none-63b3ec)
 
-> **Live:** <https://cuperman007.github.io/orbita/>
+> **Live:** <https://cuperman007.github.io/orbita/> — deployed from this repo by GitHub Pages.
 
 ## Run it
 
@@ -52,10 +52,19 @@ Push to `main` and GitHub Actions runs `scripts/check.js` (asset references, JS 
 
 Pages is enabled on this repo with **Source: GitHub Actions** (`build_type: workflow`), building from `main`. Every commit or merged PR to `main` runs the checks and redeploys automatically.
 
-> Note: the **repo is private** but the deployed **site is public** (that's how GitHub Pages works for private repos). Anyone with the URL can view it.
+The deployed site lives at **`/orbita`** on the GitHub Pages domain — i.e. <https://cuperman007.github.io/orbita/> (the path is the repo name, since this is a project site rather than a user site).
 
 ## Run the checks locally
 
 ```sh
 node scripts/check.js
 ```
+
+## How this was built
+
+This site was generated end-to-end locally — no cloud AI, no IDE plugin, no build tooling:
+
+- **Hardware:** MacBook Pro, Apple **M3 Max** with **128 GB** unified memory
+- **Model:** **Qwen** (an open-weight large language model), running locally
+- **Harness:** [LM Studio](https://lmstudio.ai/) Bionic agent, working in the terminal on this machine
+- **Everything above — design, engineering, CI/CD, and the content — was produced in a single autonomous session** on that setup; the only human input was a one-line brief and a green light to publish.

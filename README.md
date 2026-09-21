@@ -18,7 +18,7 @@ python3 -m http.server 8787
 
 ## Features
 
-- **Accurate orbital motion** — planets use their real orbital periods; comets (Halley, Encke) solve Kepler's equation each frame with real eccentricities, and their tails stream away from the Sun.
+- **True planetary positions** — every body carries real J2000 Keplerian orbital elements (a, e, L, ϖ) and Kepler's equation is solved each frame, so the planets are drawn exactly where they are on the simulated date. Comet tails stream away from the Sun.
 - **520-rock asteroid belt** between Mars and Jupiter, with periods following Kepler's third law.
 - **Camera** — drag to pan, scroll/pinch to zoom, click to select, "Follow" to lock onto a moving body.
 - **Time machine** — pause or run at 1 day → 1 year per second, with a live simulated date.
@@ -30,7 +30,7 @@ python3 -m http.server 8787
 
 ## Honesty about the model
 
-Orbital *periods*, eccentricities, distances (AU), diameters, temperatures and moon counts are real values. The rendering is not to scale: orbital radii use a compressed `AU^0.55` projection so Neptune fits on screen, planet sizes are exaggerated, and orbits are drawn circular (mean motion) except for comets. It's a map, not a simulator.
+Orbital *elements*, periods, distances (AU), diameters, temperatures and moon counts are real values, and positions are the true in-plane solution of Kepler's equation for the simulated date. The *rendering* is compressed: orbital radii use an `AU^0.55` projection so Neptune fits on screen, planet sizes are exaggerated, and the projection is 2D (orbital inclinations are flattened to the ecliptic plane). It's a map, not an ephemeris — for navigation-grade positions use JPL Horizons.
 
 ## Project layout
 

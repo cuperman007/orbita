@@ -77,13 +77,16 @@ if (data) {
 
   for (const p of PLANETS) {
     const bad = [
-      !Number.isFinite(p.radiusKm) || p.radiusKm <= 0 && 'radiusKm',
-      !Number.isFinite(p.orbitAU) || p.orbitAU <= 0 && 'orbitAU',
-      !Number.isFinite(p.periodDays) || p.periodDays <= 0 && 'periodDays',
+      (!Number.isFinite(p.radiusKm) || p.radiusKm <= 0) && 'radiusKm',
+      (!Number.isFinite(p.orbitAU) || p.orbitAU <= 0) && 'orbitAU',
+      (!Number.isFinite(p.periodDays) || p.periodDays <= 0) && 'periodDays',
+      (!Number.isFinite(p.ecc) || p.ecc < 0 || p.ecc >= 1) && 'ecc',
+      !Number.isFinite(p.L0) && 'L0',
+      !Number.isFinite(p.varpi) && 'varpi',
       !p.blurb?.length && 'blurb',
       !Number.isFinite(p.tempC) && 'tempC',
     ].filter(Boolean);
-    bad.length ? fail(`${p.id}: ${bad.join(', ')}`) : ok(`${p.id} fields valid`);
+    bad.length ? fail(`${p.id}: ${bad.join(', ')}`) : ok(`${p.id} fields valid (incl. J2000 elements)`);
     for (const m of p.moonsList ?? []) {
       if (!m.name || !Number.isFinite(m.periodDays) || m.periodDays === 0) fail(`${p.id} moon ${m.name ?? '?'}: bad period`);
     }

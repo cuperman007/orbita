@@ -1,28 +1,30 @@
 /* ORBITA — planetary data.
- * All physical values are real (mean/average values).
- * Display radii are computed in app.js from radiusKm.
- * phase = starting orbital angle (radians) so the layout looks good at t=0.
+ * All physical values are real.
+ * Orbital elements are mean elements at the J2000.0 epoch (a, e, L, ϖ):
+ *   ecc = orbital eccentricity, L0 = mean longitude (deg), varpi = longitude of perihelion (deg).
+ * app.js solves Kepler's equation for these, so planets appear where they truly are
+ * on the simulated date. Display sizes are computed in app.js.
  */
 
 const PLANETS = [
   {
     id: 'mercury', name: 'Mercury', color: '#c8b6a6', color2: '#7d6f63',
     radiusKm: 2440, orbitAU: 0.387, periodDays: 87.97, rotationHours: 1407.6,
-    moons: 0, tempC: 167, phase: 0.8,
+    moons: 0, tempC: 167, ecc: 0.20563, L0: 252.25084, varpi: 77.45779,
     blurb: 'A scorched, cratered world racing around the Sun. Its 88-day year is shorter than the 176 Earth days it takes to go from one sunrise to the next.',
     moonsList: []
   },
   {
     id: 'venus', name: 'Venus', color: '#f0d3a8', color2: '#c08a4f',
     radiusKm: 6052, orbitAU: 0.723, periodDays: 224.7, rotationHours: -5832.5,
-    moons: 0, tempC: 464, phase: 2.4,
+    moons: 0, tempC: 464, ecc: 0.00677, L0: 181.97970, varpi: 131.56368,
     blurb: 'A runaway greenhouse. Surface pressure is 92× Earth’s and it is the hottest planet — hotter than Mercury, despite being twice as far from the Sun.',
     moonsList: []
   },
   {
     id: 'earth', name: 'Earth', color: '#63b3ec', color2: '#2b63ad',
     radiusKm: 6371, orbitAU: 1.0, periodDays: 365.25, rotationHours: 23.93,
-    moons: 1, tempC: 15, phase: 5.0,
+    moons: 1, tempC: 15, ecc: 0.01671, L0: 100.46435, varpi: 102.93735,
     blurb: 'The only known world with liquid-water oceans and life. 71% of its surface is ocean, and it has one large moon that stabilizes its climate.',
     moonsList: [
       { name: 'Moon', radiusKm: 1737, dist: 1.0, periodDays: 27.32, color: '#b8b4ae' }
@@ -31,7 +33,7 @@ const PLANETS = [
   {
     id: 'mars', name: 'Mars', color: '#e07a52', color2: '#9c3d24',
     radiusKm: 3390, orbitAU: 1.524, periodDays: 686.98, rotationHours: 24.62,
-    moons: 2, tempC: -63, phase: 3.7,
+    moons: 2, tempC: -63, ecc: 0.09341, L0: 355.45332, varpi: 336.04084,
     blurb: 'The red planet. Home to Olympus Mons, a volcano roughly three times the height of Everest, and the dust devil footprints left by passing rovers.',
     moonsList: [
       { name: 'Phobos', radiusKm: 11, dist: 0.7, periodDays: 0.319, color: '#8a8378' },
@@ -41,7 +43,7 @@ const PLANETS = [
   {
     id: 'jupiter', name: 'Jupiter', color: '#e0b088', color2: '#a06a3c',
     radiusKm: 69911, orbitAU: 5.203, periodDays: 4332.59, rotationHours: 9.93,
-    moons: 95, tempC: -108, phase: 1.4, bands: true,
+    moons: 95, tempC: -108, ecc: 0.04899, L0: 34.40405, varpi: 14.72848, bands: true,
     blurb: 'More massive than all other planets combined. The Great Red Spot is a storm wider than Earth that has been raging for at least 190 years.',
     moonsList: [
       { name: 'Io', radiusKm: 1822, dist: 0.75, periodDays: 1.769, color: '#d8c26a' },
@@ -53,7 +55,7 @@ const PLANETS = [
   {
     id: 'saturn', name: 'Saturn', color: '#ecd3a2', color2: '#b3925c',
     radiusKm: 58232, orbitAU: 9.537, periodDays: 10759.22, rotationHours: 10.66,
-    moons: 146, tempC: -139, phase: 4.3, bands: true,
+    moons: 146, tempC: -139, ecc: 0.05655, L0: 49.94432, varpi: 92.59887, bands: true,
     blurb: 'The ringed jewel. Its rings are mostly water ice kilometres to thousands of kilometres thick. Saturn is so light it would float in a big enough tub of water.',
     rings: { inner: 1.5, outer: 2.6, alpha: 0.5, color: '#d8c49a' },
     moonsList: [
@@ -66,7 +68,7 @@ const PLANETS = [
   {
     id: 'uranus', name: 'Uranus', color: '#a5e0ea', color2: '#58a8bc',
     radiusKm: 25362, orbitAU: 19.19, periodDays: 30688.5, rotationHours: -17.24,
-    moons: 28, tempC: -197, phase: 0.3,
+    moons: 28, tempC: -197, ecc: 0.04717, L0: 313.23810, varpi: 170.95425,
     blurb: 'The sideways ice giant, tilted 98° so it rolls around the Sun like a barrel. Coldest planetary atmosphere in the Solar System: −224 °C.',
     rings: { inner: 1.6, outer: 2.1, alpha: 0.25, color: '#9fd0da' },
     moonsList: [
@@ -77,7 +79,7 @@ const PLANETS = [
   {
     id: 'neptune', name: 'Neptune', color: '#5f7ce8', color2: '#2c3f9e',
     radiusKm: 24622, orbitAU: 30.07, periodDays: 60182, rotationHours: 16.11,
-    moons: 16, tempC: -201, phase: 2.9,
+    moons: 16, tempC: -201, ecc: 0.00899, L0: 304.88003, varpi: 44.96476,
     blurb: 'The windy blue world. Supersonic winds reach 2,100 km/h — the fastest in the Solar System. It was the first planet found by mathematical prediction.',
     moonsList: [
       { name: 'Triton', radiusKm: 1353, dist: 1.5, periodDays: -5.877, color: '#cfc4b0' }

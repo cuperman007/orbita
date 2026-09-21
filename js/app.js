@@ -1,8 +1,10 @@
 /* ORBITA — application engine.
- * Canvas rendering with a world→screen camera (pan + zoom),
- * Keplerian orbits for comets, circular mean-motion orbits for planets,
- * time controls, click/tap selection with camera follow,
- * keyboard shortcuts, quiz mode, tour mode.
+ * Canvas rendering with a world→screen camera (pan + zoom).
+ * Every body (planets + comets) follows a true Keplerian ellipse: real J2000
+ * orbital elements, Kepler's equation solved each frame, so the map shows the
+ * Solar System's actual configuration on the simulated date.
+ * Time controls, click/tap selection with camera follow, keyboard shortcuts,
+ * quiz mode, tour mode.
  */
 (() => {
   'use strict';
@@ -41,11 +43,27 @@
   const SUN_R = 16;
   const planetDisplayR = (km) => 3 + 2.3 * Math.log10(km / 1900 + 1);
 
-  // Precompute display geometry for planets.
+  // Days between the J2000.0 epoch (2000-01-01 12:00 TT) and our sim start date.
+  const EPOCH_DAYS = (sim.startDate - new Date(Date.UTC(2000, 0, 1, 12))) / 86400000;
+  const D2R = Math.PI / 180;
+  const norm2pi = (x) => x % (2 * Math.PI);
+
+  // Kepler element set shared by planets and comets.
+  // M0 = mean anomaly at t = t0 days; varpi = argument of perihelion (rad);
+  // planets: M0 = (L0 - ϖ) at J2000, t0 = EPOCH_DAYS. comets: M0 = phase, t0 = 0.
+  function makeEl({ aAU, ecc, M0, varpi, t0, periodDays }) {
+    return { aAU, ecc, M0: norm2pi(M0), varpi, t0, periodDays };
+  }
+
+  // Precompute display geometry + Kepler elements for planets.
   const planetGeo = PLANETS.map((p) => ({
     ...p,
-    orbitR: scaleAU(p.orbitAU),
-    dispR: planetDisplayR(p.radiusKm)
+    dispR: planetDisplayR(p.radiusKm),
+    el: makeEl({
+      aAU: p.orbitAU, ecc: p.ecc,
+      M0: (p.L0 - p.varpi) * D2R, varpi: p.varpi * D2R,
+      t0: EPOCH_DAYS, periodDays: p.periodDays
+    })
   }));
 
   // ---------- Asteroid belt (visual) ----------
@@ -66,8 +84,13 @@
   // ---------- Bodies for hit-testing / follow ----------
   // Each body: { id, kind, geo, x, y, screenX, screenY, dispR }
   const bodies = [];
-  for (const g of planetGeo) bodies.push({ id: g.id, kind: 'planet', geo: g, x: 0, y: 0 });
-  for (const c of COMETS) bodies.push({ id: c.id, kind: 'comet', geo: c, x: 0, y: 0 });
+  for (const g of planetGeo) bodies.push({ id: g.id, kind: 'planet', geo: g, el: g.el, x: 0, y: 0 });
+  for (const c of COMETS) {
+    bodies.push({
+      id: c.id, kind: 'comet', geo: c, x: 0, y: 0,
+      el: makeEl({ aAU: c.aAU, ecc: c.e, M0: c.phase, varpi: c.omega, t0: 0, periodDays: c.periodDays })
+    });
+  }
   const bodyIndex = new Map(bodies.map((b) => [b.id, b]));
 
   // ---------- Stars ----------
@@ -109,12 +132,8 @@
   window.addEventListener('resize', resize);
 
   // ---------- Orbit math ----------
-  function planetPos(g, days) {
-    const ang = g.phase + (2 * Math.PI * days) / g.periodDays;
-    return { x: Math.cos(ang) * g.orbitR, y: Math.sin(ang) * g.orbitR };
-  }
-
-  // Solve Kepler's equation M = E - e sin E (Newton, 6 iters is ample).
+  // Solve Kepler's equation M = E - e sin E (Newton; 6 iterations is ample —
+  // even at Halley's e=0.967 the residual is < 6e-4 rad, i.e. sub-pixel).
   function keplerE(M, e) {
     let E = e < 0.8 ? M : Math.PI;
     for (let i = 0; i < 6; i++) {
@@ -123,16 +142,18 @@
     return E;
   }
 
-  function cometPos(c, days) {
-    const M = (c.phase + (2 * Math.PI * days) / c.periodDays) % (2 * Math.PI);
-    const E = keplerE(M, c.e);
+  // True position (world px) + current distance (AU) for a Kepler element set.
+  function keplerPos(el, days) {
+    const M = norm2pi(el.M0 + (2 * Math.PI * (el.t0 + days)) / el.periodDays);
+    const E = keplerE(M, el.ecc);
     const nu = 2 * Math.atan2(
-      Math.sqrt(1 + c.e) * Math.sin(E / 2),
-      Math.sqrt(1 - c.e) * Math.cos(E / 2)
+      Math.sqrt(1 + el.ecc) * Math.sin(E / 2),
+      Math.sqrt(1 - el.ecc) * Math.cos(E / 2)
     );
-    const rAU = c.aAU * (1 - c.e * Math.cos(E));
+    const rAU = el.aAU * (1 - el.ecc * Math.cos(E));
     const r = scaleAU(rAU);
-    return { x: Math.cos(nu + c.omega) * r, y: Math.sin(nu + c.omega) * r, rAU, r };
+    const ang = nu + el.varpi;
+    return { x: Math.cos(ang) * r, y: Math.sin(ang) * r, rAU };
   }
 
   // ---------- World → screen ----------
@@ -180,32 +201,22 @@
     ctx.fill();
   }
 
-  function drawOrbit(radiusAUOrR, alpha) {
-    // Circle (planets) — pass display radius in world px.
-    const c = toScreen(0, 0);
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, radiusAUOrR * cam.zoom, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(120, 150, 220, ${alpha})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-
-  function drawCometOrbit(c) {
+  // True ellipse (compressed by the display projection) for a Kepler element set.
+  function drawKeplerOrbit(el, color, dash) {
     const c0 = toScreen(0, 0);
     ctx.beginPath();
-    const aDisp = scaleAU(c.aAU);
-    // Sample the true ellipse (compressed by scaleAU) for accuracy.
-    for (let i = 0; i <= 128; i++) {
-      const nu = (i / 128) * Math.PI * 2;
-      const rAU = (c.aAU * (1 - c.e * c.e)) / (1 + c.e * Math.cos(nu));
+    for (let i = 0; i <= 160; i++) {
+      const nu = (i / 160) * Math.PI * 2;
+      const rAU = (el.aAU * (1 - el.ecc * el.ecc)) / (1 + el.ecc * Math.cos(nu));
       const r = scaleAU(rAU);
-      const sx = c0.x + Math.cos(nu + c.omega) * r * cam.zoom;
-      const sy = c0.y + Math.sin(nu + c.omega) * r * cam.zoom;
+      const ang = nu + el.varpi;
+      const sx = c0.x + Math.cos(ang) * r * cam.zoom;
+      const sy = c0.y + Math.sin(ang) * r * cam.zoom;
       i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
     }
     ctx.closePath();
-    ctx.strokeStyle = 'rgba(150, 220, 255, 0.14)';
-    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = color;
+    ctx.setLineDash(dash ? [4, 5] : []);
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.setLineDash([]);
@@ -381,15 +392,10 @@
       }
     }
 
-    // Update positions.
+    // Update positions (true Keplerian motion for every body).
     for (const b of bodies) {
-      if (b.kind === 'planet') {
-        const pos = planetPos(b.geo, sim.days);
-        b.x = pos.x; b.y = pos.y;
-      } else {
-        const pos = cometPos(b.geo, sim.days);
-        b.x = pos.x; b.y = pos.y; b.rAU = pos.rAU;
-      }
+      const pos = keplerPos(b.el, sim.days);
+      b.x = pos.x; b.y = pos.y; b.rAU = pos.rAU;
     }
 
     // Camera: follow target or ease toward pan target.
@@ -405,9 +411,9 @@
 
     // Draw.
     drawStars(t);
-    // Orbit paths
-    for (const g of planetGeo) drawOrbit(g.orbitR, 0.16);
-    for (const c of COMETS) drawCometOrbit(c);
+    // Orbit paths (true ellipses)
+    for (const g of planetGeo) drawKeplerOrbit(g.el, 'rgba(120, 150, 220, 0.16)');
+    for (const b of bodies) if (b.kind === 'comet') drawKeplerOrbit(b.el, 'rgba(150, 220, 255, 0.14)', true);
     drawSun();
     drawBelt();
     for (const b of bodies) {
@@ -462,7 +468,9 @@
         <div class="stat-grid">
           <div class="stat"><div class="k">Diameter</div><div class="v">${fmtKm(g.radiusKm)} km</div></div>
           <div class="stat"><div class="k">Orbit</div><div class="v">${g.orbitAU} AU</div></div>
+          <div class="stat"><div class="k">Eccentricity</div><div class="v">${g.ecc}</div></div>
           <div class="stat"><div class="k">Year</div><div class="v">${fmtDays(g.periodDays)}</div></div>
+          <div class="stat"><div class="k">Sun distance now</div><div class="v">${(b.rAU ?? g.orbitAU).toFixed(2)} AU</div></div>
           <div class="stat"><div class="k">Day</div><div class="v">${fmtHours(g.rotationHours)}</div></div>
           <div class="stat"><div class="k">Moons</div><div class="v">${g.moons}</div></div>
           <div class="stat"><div class="k">Mean temp</div><div class="v">${g.tempC} °C</div></div>
@@ -700,7 +708,7 @@
       <li><span>Release camera / close</span><span><kbd>Esc</kbd></span></li>
       <li><span>Pan · Zoom · Select</span><span>drag · scroll / pinch · click</span></li>
     </ul>
-    <p class="quiz-why" style="margin-top:16px">Note: orbital periods, distances and sizes are real values, but the map uses a compressed projection so Neptune fits on screen — planets and orbits are not to scale.</p>`;
+    <p class="quiz-why" style="margin-top:16px">Note: planets follow their real J2000 orbital elements — they are exactly where they are on the simulated date. Only the *sizes* and the distance scale are compressed so everything fits on one screen.</p>`;
   });
 
   // ---------- Quiz ----------

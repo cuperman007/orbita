@@ -101,6 +101,35 @@ const COMETS = [
   }
 ];
 
+/* Dwarf planets — same real J2000 elements; periods derived from Kepler III (a^1.5).
+ * Their orbits extend the map out to ~68 AU. */
+const DWARF_PLANETS = [
+  {
+    id: 'pluto', name: 'Pluto', dwarf: true, color: '#d8c3ac', color2: '#9c8468',
+    radiusKm: 1188, orbitAU: 39.48, periodDays: 90606, rotationHours: -153.29,
+    moons: 5, tempC: -229, ecc: 0.2488, L0: 238.99, varpi: 224.07,
+    blurb: 'The beloved former ninth planet. Reclassified in 2006, it hosts five moons, the largest (Charon) so big the pair waltz around a shared point in space.'
+  },
+  {
+    id: 'haumea', name: 'Haumea', dwarf: true, color: '#cfc8c0', color2: '#8f8880',
+    radiusKm: 620, orbitAU: 43.12, periodDays: 103421, rotationHours: 8.4,
+    moons: 2, tempC: -243, ecc: 0.1944, L0: 238.5, varpi: 248.3,
+    blurb: 'A collision-ridged egg that tumbles on its axis every 8.4 hours, wrapped in a thin ring — and it is covered in crystalline ice.'
+  },
+  {
+    id: 'makemake', name: 'Makemake', dwarf: true, color: '#c8a888', color2: '#8f6f52',
+    radiusKm: 715, orbitAU: 45.43, periodDays: 111842, rotationHours: 30.6,
+    moons: 1, tempC: -239, ecc: 0.1851, L0: 129.8, varpi: 102.6,
+    blurb: 'A reddish world named after the creator deity of the Rapa Nui people of Easter Island. One of the few known objects with a surface of nitrogen and methane ices.'
+  },
+  {
+    id: 'eris', name: 'Eris', dwarf: true, color: '#d0d4da', color2: '#8a9098',
+    radiusKm: 581, orbitAU: 67.86, periodDays: 204179, rotationHours: 130.9,
+    moons: 1, tempC: -236, ecc: 0.4361, L0: 353.16, varpi: 359.52,
+    blurb: 'Slightly smaller than Pluto but more massive — its discovery was what triggered the 2006 IAU vote that defined “planet” and gave us the dwarf-planet category.'
+  }
+];
+
 /* Quiz: pool of questions. 5 random ones are drawn per run. */
 const QUIZ = [
   { q: 'Which planet is the hottest in the Solar System?',
@@ -141,4 +170,4 @@ const QUIZ = [
     why: 'Since its discovery in 1846, Neptune has completed only one full orbit.' }
 ];
 
-window.ORBITA_DATA = { PLANETS, COMETS, QUIZ };
+window.ORBITA_DATA = { PLANETS, DWARF_PLANETS, COMETS, QUIZ };

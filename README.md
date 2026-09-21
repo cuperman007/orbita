@@ -20,12 +20,13 @@ python3 -m http.server 8787
 
 - **True planetary positions** — every body carries real J2000 Keplerian orbital elements (a, e, L, ϖ) and Kepler's equation is solved each frame, so the planets are drawn exactly where they are on the simulated date. Comet tails stream away from the Sun.
 - **520-rock asteroid belt** between Mars and Jupiter, with periods following Kepler's third law.
+- **Dwarf planets** — Pluto, Haumea, Makemake and Eris orbit out to ~68 AU, each with its own dossier.
 - **Camera** — drag to pan, scroll/pinch to zoom, click to select, "Follow" to lock onto a moving body.
 - **Time machine** — pause or run at 1 day → 1 year per second, with a live simulated date.
 - **Planet dossiers** — diameter, orbit, year, day (incl. Venus's retrograde spin), moons, temperature, and a fact; moons of each planet are drawn individually (Triton orbits retrograde).
 - **Tour mode** (`T`) — a guided flythrough that hops planet to planet.
 - **Quiz** (`Q`) — 5 random questions from a 12-question pool, with explanations.
-- **Keyboard-first** — `1`–`8` select, arrows cycle, `Space` pauses, `+/−` zoom, `0` resets, `Esc` releases.
+- **Keyboard-first** — `1`–`8` select the eight planets, arrows cycle, `Space` pauses, `+/−` zoom, `0` resets, `Esc` releases. Dwarf planets and comets are clickable too.
 - **Accessible & mobile** — `prefers-reduced-motion` respected, touch pan + pinch zoom, ARIA labels on interactive regions.
 
 ## Honesty about the model

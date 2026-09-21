@@ -9,7 +9,7 @@
 (() => {
   'use strict';
 
-  const { PLANETS, COMETS, QUIZ } = window.ORBITA_DATA;
+  const { PLANETS, DWARF_PLANETS, COMETS, QUIZ } = window.ORBITA_DATA;
 
   // ---------- Canvas & camera ----------
   const canvas = document.getElementById('space');
@@ -66,6 +66,19 @@
     })
   }));
 
+  // Dwarf planets: same treatment, out beyond Neptune.
+  const dwarfGeo = DWARF_PLANETS.map((p) => ({
+    ...p,
+    dispR: planetDisplayR(p.radiusKm),
+    moonsList: [],
+    el: makeEl({
+      aAU: p.orbitAU, ecc: p.ecc,
+      M0: (p.L0 - p.varpi) * D2R, varpi: p.varpi * D2R,
+      t0: EPOCH_DAYS, periodDays: p.periodDays
+    })
+  }));
+  const allPlanetGeo = [...planetGeo, ...dwarfGeo];
+
   // ---------- Asteroid belt (visual) ----------
   // ~500 little rocks between Mars and Jupiter. Periods follow Kepler III: T = a^1.5 years.
   const belt = [];
@@ -84,7 +97,7 @@
   // ---------- Bodies for hit-testing / follow ----------
   // Each body: { id, kind, geo, x, y, screenX, screenY, dispR }
   const bodies = [];
-  for (const g of planetGeo) bodies.push({ id: g.id, kind: 'planet', geo: g, el: g.el, x: 0, y: 0 });
+  for (const g of allPlanetGeo) bodies.push({ id: g.id, kind: 'planet', geo: g, el: g.el, x: 0, y: 0 });
   for (const c of COMETS) {
     bodies.push({
       id: c.id, kind: 'comet', geo: c, x: 0, y: 0,
@@ -296,8 +309,8 @@
       }
     }
 
-    // Labels
-    if (cam.zoom > 0.45 || sim.selected === g.id) {
+    // Labels (dwarf planets are rare out there — always label them)
+    if (g.dwarf || cam.zoom > 0.45 || sim.selected === g.id) {
       ctx.font = '600 11px ' + '"Avenir Next", system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = sim.selected === g.id ? '#ffd9a0' : 'rgba(200, 214, 255, 0.75)';
@@ -413,6 +426,7 @@
     drawStars(t);
     // Orbit paths (true ellipses)
     for (const g of planetGeo) drawKeplerOrbit(g.el, 'rgba(120, 150, 220, 0.16)');
+    for (const g of dwarfGeo) drawKeplerOrbit(g.el, 'rgba(190, 170, 230, 0.13)', true);
     for (const b of bodies) if (b.kind === 'comet') drawKeplerOrbit(b.el, 'rgba(150, 220, 255, 0.14)', true);
     drawSun();
     drawBelt();
@@ -462,7 +476,7 @@
           <span class="planet-swatch" style="background: radial-gradient(circle at 35% 35%, ${g.color}, ${g.color2}); --glow: ${hexA(g.color, 0.55)};"></span>
           <div>
             <h2 class="planet-name">${g.name}</h2>
-            <div class="planet-type">Planet</div>
+            <div class="planet-type">${g.dwarf ? 'Dwarf planet' : 'Planet'}</div>
           </div>
         </div>
         <div class="stat-grid">

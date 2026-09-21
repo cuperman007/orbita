@@ -71,12 +71,9 @@ try {
 }
 const data = sandbox.window.ORBITA_DATA;
 if (data) {
-  const { PLANETS, COMETS, QUIZ } = data;
-  const ids = new Set(PLANETS.map((p) => p.id));
-  ids.size === PLANETS.length ? ok(`${PLANETS.length} planets, unique ids`) : fail('duplicate planet ids');
-
-  for (const p of PLANETS) {
-    const bad = [
+  const { PLANETS, DWARF_PLANETS, COMETS, QUIZ } = data;
+  const validateBody = (p) => {
+    return [
       (!Number.isFinite(p.radiusKm) || p.radiusKm <= 0) && 'radiusKm',
       (!Number.isFinite(p.orbitAU) || p.orbitAU <= 0) && 'orbitAU',
       (!Number.isFinite(p.periodDays) || p.periodDays <= 0) && 'periodDays',
@@ -86,6 +83,12 @@ if (data) {
       !p.blurb?.length && 'blurb',
       !Number.isFinite(p.tempC) && 'tempC',
     ].filter(Boolean);
+  };
+  const ids = new Set(PLANETS.map((p) => p.id));
+  ids.size === PLANETS.length ? ok(`${PLANETS.length} planets, unique ids`) : fail('duplicate planet ids');
+
+  for (const p of PLANETS) {
+    const bad = validateBody(p);
     bad.length ? fail(`${p.id}: ${bad.join(', ')}`) : ok(`${p.id} fields valid (incl. J2000 elements)`);
     for (const m of p.moonsList ?? []) {
       if (!m.name || !Number.isFinite(m.periodDays) || m.periodDays === 0) fail(`${p.id} moon ${m.name ?? '?'}: bad period`);
@@ -93,6 +96,11 @@ if (data) {
   }
   const aus = PLANETS.map((p) => p.orbitAU);
   (aus.every((v, i) => i === 0 || v > aus[i - 1])) ? ok('orbits in increasing AU order') : fail('orbital order broken');
+
+  for (const p of DWARF_PLANETS) {
+    const bad = validateBody(p);
+    bad.length ? fail(`dwarf ${p.id}: ${bad.join(', ')}`) : ok(`dwarf ${p.id} fields valid`);
+  }
 
   for (const c of COMETS) {
     c.aAU > 0 && c.e > 0 && c.e < 1 && Number.isFinite(c.periodDays)

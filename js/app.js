@@ -374,7 +374,10 @@
       if (sim.tourTimer > 6) {
         sim.tourTimer = 0;
         sim.tourIndex = (sim.tourIndex + 1) % PLANETS.length;
-        selectBody(PLANETS[sim.tourIndex].id, true);
+        const id = PLANETS[sim.tourIndex].id;
+        sim.follow = id;
+        refitToFollow();
+        selectBody(id, true);
       }
     }
 
@@ -402,7 +405,6 @@
 
     // Draw.
     drawStars(t);
-    const sunP = toScreen(0, 0);
     // Orbit paths
     for (const g of planetGeo) drawOrbit(g.orbitR, 0.16);
     for (const c of COMETS) drawCometOrbit(c);
@@ -491,7 +493,11 @@
     }
 
     panel.classList.remove('hidden');
-    if (!silent) hint.innerHTML = `Following <b>${g.name}</b>? Press <kbd>Esc</kbd> to release the camera.`;
+    if (!silent) {
+      hint.innerHTML = sim.follow
+        ? `Following <b>${g.name}</b>. Press <kbd>Esc</kbd> to release the camera.`
+        : HINT_DEFAULT;
+    }
     updateFollowBtns();
   }
 
@@ -693,7 +699,8 @@
       <li><span>Quiz / tour</span><span><kbd>Q</kbd> / <kbd>T</kbd></span></li>
       <li><span>Release camera / close</span><span><kbd>Esc</kbd></span></li>
       <li><span>Pan · Zoom · Select</span><span>drag · scroll / pinch · click</span></li>
-    </ul>`;
+    </ul>
+    <p class="quiz-why" style="margin-top:16px">Note: orbital periods, distances and sizes are real values, but the map uses a compressed projection so Neptune fits on screen — planets and orbits are not to scale.</p>`;
   });
 
   // ---------- Quiz ----------
@@ -778,6 +785,8 @@
       sim.tourTimer = 99; // fires immediately
       if (sim.daysPerSec < 1) setSpeed(30);
       closeModal();
+    } else {
+      sim.follow = null;
     }
   }
   document.getElementById('tour-btn').addEventListener('click', toggleTour);

@@ -4,6 +4,8 @@ A single-page, dependency-free interactive map of the Solar System. Watch the pl
 
 ![stack](https://img.shields.io/badge/stack-vanilla%20JS%20%2B%20canvas-ffb347) ![deps](https://img.shields.io/badge/dependencies-none-63b3ec)
 
+> **Live:** <https://cuperman007.github.io/orbita/>
+
 ## Run it
 
 It's a static site — no build step:
@@ -48,7 +50,9 @@ scripts/check.js      CI checks: asset refs, node --check, data shape
 
 Push to `main` and GitHub Actions runs `scripts/check.js` (asset references, JS syntax, planetary data validation), then deploys the site to GitHub Pages.
 
-To enable Pages deployment: in your repo, **Settings → Pages → Source: GitHub Actions**, and rename `main` to your default branch if different.
+Pages is enabled on this repo with **Source: GitHub Actions** (`build_type: workflow`), building from `main`. Every commit or merged PR to `main` runs the checks and redeploys automatically.
+
+> Note: the **repo is private** but the deployed **site is public** (that's how GitHub Pages works for private repos). Anyone with the URL can view it.
 
 ## Run the checks locally
 

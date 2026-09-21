@@ -110,6 +110,9 @@ function check(name, cond, detail = '') {
 }
 
 // ---------- Baseline ----------
+// Pause immediately: at 1 day/sec, 10 frames ≈ 4 simulated hours — enough to
+// cross midnight and make the load-date checks flaky when run in the evening.
+for (const f of makeEl('speed-0').listeners['click'] ?? []) f();
 snapshot(); stepFrames(10);
 const x0 = sunPos()[0];
 const loadClock = makeEl('sim-date').textContent; // sim is at day 0 → load date
@@ -175,6 +178,27 @@ fire(canvas, 'pointerdown', { pointerId: 2, clientX: 200, clientY: 600 });
 fire(canvas, 'pointerup', { pointerId: 2, clientX: 200, clientY: 600 });
 snapshot(); stepFrames(2);
 check('click on empty space → deselects', makeEl('panel').classList.contains('hidden'), 'panel hidden');
+
+// ---------- Test: ⌂ home button = also a FULL reset (time + view) ----------
+for (const f of makeEl('speed-365').listeners['click'] ?? []) f();
+stepFrames(200); // ≈ 1180 simulated days
+const dateBeforeHome = makeEl('sim-date').textContent;
+for (const f of makeEl('speed-0').listeners['click'] ?? []) f(); // pause first
+for (const f of makeEl('reset-btn').listeners['click'] ?? []) f();
+stepFrames(60);
+const d2 = windowStub.__ORBITA_DEBUG;
+check('⌂: sim date returns to load date', dateBeforeHome !== loadClock && makeEl('sim-date').textContent === loadClock,
+  `${dateBeforeHome} → ${makeEl('sim-date').textContent} (load: ${loadClock})`);
+check('⌂: camera finite & back home', Number.isFinite(d2.cam.x) && Number.isFinite(d2.cam.zoom) && Math.abs(sunPos()[0] - W / 2) < 8,
+  `sun.x=${sunPos()[0].toFixed(1)}`);
+
+// ---------- Test: camera self-heals if it ever goes non-finite ----------
+d2.cam.targetX = NaN; d2.cam.zoom = Infinity; // simulate a broken camera state
+stepFrames(30);
+const sp = sunPos();
+check('broken camera (NaN/Inf) self-heals: Sun visible & finite',
+  sp && Number.isFinite(sp[0]) && Number.isFinite(sp[1]) && sp[0] >= 0 && sp[0] <= W && sp[1] >= 0 && sp[1] <= H,
+  `sun at (${sp[0]?.toFixed(0)}, ${sp[1]?.toFixed(0)})`);
 
 // ---------- Summary ----------
 const failed = results.filter((r) => !r.ok);

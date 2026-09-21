@@ -39,6 +39,8 @@
   // Compress the huge range of orbital distances: r_disp = K * AU^p
   const SCALE_K = 62, SCALE_P = 0.55;
   const scaleAU = (au) => SCALE_K * Math.pow(au, SCALE_P);
+  // Default "home" zoom: fit the system out to Saturn.
+  const homeFit = () => (Math.min(W, H) / 2) / (scaleAU(9.537) + 30);
 
   const SUN_R = 16;
   const planetDisplayR = (km) => 3 + 2.3 * Math.log10(km / 1900 + 1);
@@ -387,9 +389,19 @@
   // ---------- Main loop ----------
   let last = performance.now();
   function frame(t) {
+    requestAnimationFrame(frame); // schedule first: a frame error must never break the loop
     const dt = Math.min(0.1, (t - last) / 1000);
     last = t;
 
+    // Self-heal: a non-finite camera (e.g. from a wild gesture) would push every
+    // body off-canvas so the planets appear to vanish — snap the camera home.
+    if ([cam.x, cam.y, cam.zoom, cam.targetX, cam.targetY, cam.targetZoom].some((v) => !Number.isFinite(v))) {
+      const z = homeFit();
+      cam.x = 0; cam.y = 0; cam.zoom = z;
+      cam.targetX = 0; cam.targetY = 0; cam.targetZoom = z;
+    }
+
+    try {
     sim.days += sim.daysPerSec * dt;
 
     // Tour: hop planets on a timer.
@@ -440,7 +452,14 @@
     }
 
     updateClock();
-    requestAnimationFrame(frame);
+    } catch (err) {
+      console.warn('ORBITA: frame error', err);
+      if ([cam.x, cam.y, cam.zoom, cam.targetX, cam.targetY, cam.targetZoom].some((v) => !Number.isFinite(v))) {
+        const z = homeFit();
+        cam.x = 0; cam.y = 0; cam.zoom = z;
+        cam.targetX = 0; cam.targetY = 0; cam.targetZoom = z;
+      }
+    }
   }
 
   // ---------- Clock ----------
@@ -677,7 +696,7 @@
       else { sim.follow = null; deselect(); }
     } else if (k === '+' || k === '=') zoomBy(1.3);
     else if (k === '-' || k === '_') zoomBy(1 / 1.3);
-    else if (k === '0') resetView();
+    else if (k === '0') resetAll();
     else if (/^[1-8]$/.test(k)) selectBody(PLANETS[+k - 1].id);
     else if (k === 'q' || k === 'Q') toggleQuiz();
     else if (k === 't' || k === 'T') toggleTour();
@@ -699,11 +718,20 @@
   speedBtns.forEach((b) => b.addEventListener('click', () => setSpeed(+b.dataset.speed)));
   setSpeed(sim.daysPerSec);
 
-  const todayBtn = document.getElementById('today-btn');
-  if (todayBtn) todayBtn.addEventListener('click', () => {
+  // ---------- Full reset (⏮ / ⌂ / 0): time back to today AND camera home ----------
+  let resetHintT = 0;
+  function resetAll() {
     sim.days = 0;      // back to the real "today" (load time)
     lastClock = '';
     resetView();       // …and fly the camera home, so the reset is visible
+    hint.innerHTML = '⏮ Back to today — camera home, full system in view';
+    clearTimeout(resetHintT);
+    resetHintT = setTimeout(() => { hint.innerHTML = HINT_DEFAULT; }, 3000);
+  }
+
+  const todayBtn = document.getElementById('today-btn');
+  if (todayBtn) todayBtn.addEventListener('click', () => {
+    resetAll();
     todayBtn.classList.add('active');
     setTimeout(() => todayBtn.classList.remove('active'), 250);
   });
@@ -713,10 +741,10 @@
     userZoomed = false;
     sim.follow = null;
     cam.targetX = 0; cam.targetY = 0;
-    cam.targetZoom = Math.min(W, H) / 2 / (scaleAU(9.537) + 30);
+    cam.targetZoom = homeFit();
     deselect();
   }
-  document.getElementById('reset-btn').addEventListener('click', resetView);
+  document.getElementById('reset-btn').addEventListener('click', resetAll);
   document.getElementById('zoom-in').addEventListener('click', () => zoomBy(1.35));
   document.getElementById('zoom-out').addEventListener('click', () => zoomBy(1 / 1.35));
 
@@ -744,7 +772,6 @@
       <li><span>Previous / next planet</span><span><kbd>←</kbd> <kbd>→</kbd></span></li>
       <li><span>Pause / resume</span><span><kbd>Space</kbd></span></li>
       <li><span>Zoom in / out</span><span><kbd>+</kbd> <kbd>−</kbd></span></li>
-      <li><span>Reset view</span><span><kbd>0</kbd></span></li>
       <li><span>Quiz / tour</span><span><kbd>Q</kbd> / <kbd>T</kbd></span></li>
       <li><span>Release camera / close</span><span><kbd>Esc</kbd></span></li>
       <li><span>Reset time &amp; view</span><span><b>⏮</b> / <b>⌂</b> / <kbd>0</kbd></span></li>
@@ -847,5 +874,5 @@
   requestAnimationFrame(frame);
 
   // Debug escape hatch (used by test/harness.mjs; harmless in the browser).
-  window.__ORBITA_DEBUG = { cam, sim, dragging, resetView };
+  window.__ORBITA_DEBUG = { cam, sim, dragging, resetView, resetAll };
 })();

@@ -5,6 +5,8 @@ A single-page, dependency-free interactive map of the Solar System. Watch the pl
 ![stack](https://img.shields.io/badge/stack-vanilla%20JS%20%2B%20canvas-ffb347) ![deps](https://img.shields.io/badge/dependencies-none-63b3ec)
 
 > **Live:** <https://cuperman007.github.io/orbita/> — deployed from this repo by GitHub Pages.
+>
+> **Built in one sitting, 100% locally** — on a MacBook Pro (Apple **M3 Max**, 128 GB) running the open-weight **Qwen 3.8 (27B)** model in [LM Studio](https://lmstudio.ai/). [How this was built](#how-this-was-built)
 
 ## Run it
 
@@ -18,12 +20,14 @@ python3 -m http.server 8787
 
 (Or just open `index.html` directly in a browser.)
 
+Asset URLs carry a `?v=` version stamp, so a fresh page load always picks up the newest code after an update — if the live site ever looks stale, hard-reload once (⌘⇧R).
+
 ## Features
 
 - **True planetary positions** — every body carries real J2000 Keplerian orbital elements (a, e, L, ϖ) and Kepler's equation is solved each frame, so the planets are drawn exactly where they are on the simulated date. Comet tails stream away from the Sun.
 - **520-rock asteroid belt** between Mars and Jupiter, with periods following Kepler's third law.
 - **Dwarf planets** — Pluto, Haumea, Makemake and Eris orbit out to ~68 AU, each with its own dossier.
-- **Camera** — drag **or two-finger scroll** to pan, wheel/pinch (or ⌃+scroll) to zoom, click to select, "Follow" to lock onto a moving body; ⏮ jumps time back to today **and** resets the view.
+- **Camera** — drag **or two-finger scroll** to pan, wheel/pinch (or ⌃+scroll) to zoom, click to select, "Follow" to lock onto a moving body; **⏮ / ⌂ / `0`** is a full reset — time back to today **and** the camera back to the whole system.
 - **Time machine** — pause or run at 1 day → 1 year per second, with a live simulated date.
 - **Planet dossiers** — diameter, orbit, year, day (incl. Venus's retrograde spin), moons, temperature, and a fact; moons of each planet are drawn individually (Triton orbits retrograde).
 - **Tour mode** (`T`) — a guided flythrough that hops planet to planet.
@@ -65,6 +69,6 @@ node scripts/check.js
 This site was generated end-to-end locally — no cloud AI, no IDE plugin, no build tooling:
 
 - **Hardware:** MacBook Pro, Apple **M3 Max** with **128 GB** unified memory
-- **Model:** **Qwen** (an open-weight large language model), running locally
+- **Model:** **Qwen 3.8 (27B)** — an open-weight large language model (the `incoai/Qwen3.8-27B-Splash` build from LM Studio, with its draft model for speculative decoding), running entirely on local hardware
 - **Harness:** [LM Studio](https://lmstudio.ai/) Bionic agent, working in the terminal on this machine
 - **Everything above — design, engineering, CI/CD, and the content — was produced in a single autonomous session** on that setup; the only human input was a one-line brief and a green light to publish.

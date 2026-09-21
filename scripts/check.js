@@ -32,7 +32,7 @@ const refs = [...html.matchAll(/(?:src|href)="([^"#][^"]*)"/g)]
   .filter((u) => !/^(https?:|data:|mailto:)/.test(u));
 if (refs.length === 0) fail('no local asset references found — expected some');
 for (const ref of refs) {
-  const p = path.join(root, ref);
+  const p = path.join(root, ref.split('?')[0]); // ignore ?v= cache-bust query
   fs.existsSync(p) ? ok(ref) : fail(`missing referenced file: ${ref}`);
 }
 
